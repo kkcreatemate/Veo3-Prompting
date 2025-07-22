@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Veo3 JSON Prompt Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f0f23;
+            min-height: 100vh;
+            padding: 20px;
+            color: #ffffff;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: #1a1a2e;
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+            border: 1px solid #2a2a3e;
+        }
+
+        h1 {
+            text-align: center;
+            color: #ffffff;
+            margin-bottom: 10px;
+            font-size: 3em;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #a0a0b0;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+            font-weight: 400;
+        }
+
+        .subtitle a {
+            color: #8b5cf6;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        .subtitle a:hover {
+            color: #a78bfa;
+            text-decoration: underline;
+        }
+
+        .editor-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            min-height: 700px;
+        }
+
+        .form-panel {
+            background: #16213e;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow-y: auto;
+            max-height: 800px;
+            border: 1px solid #2a2a3e;
+        }
+
+        .json-panel {
+            background: #0f0f23;
+            border-radius: 20px;
+            padding: 30px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #2a2a3e;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 25px;
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            border-radius: 16px;
+            border-left: 4px solid #8b5cf6;
+            border: 1px solid #334155;
+        }
+
+        .section h3 {
+            color: #ffffff;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #e2e8f0;
+            font-size: 0.95em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid #374151;
+            border-radius: 12px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: #1f2937;
+            color: #ffffff;
+            font-weight: 500;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15);
+            transform: translateY(-2px);
+            background: #111827;
+        }
+
+        input[type="text"]::placeholder,
+        textarea::placeholder {
+            color: #6b7280;
+            font-style: italic;
+        }
+
+        textarea {
+            min-height: 80px;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: #8b5cf6;
+            border-radius: 4px;
+        }
+
+        .json-output {
+            background: #0f0f23;
+            color: #f8fafc;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            height: 100%;
+            overflow-y: auto;
+            padding: 25px;
+            border-radius: 12px;
+            line-height: 1.8;
+            border: 1px solid #374151;
+        }
+
+        .json-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #374151;
+        }
+
+        .json-title {
+            color: #ffffff;
+            font-size: 1.3em;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .copy-btn {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .copy-btn:hover {
+            background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(139, 92, 246, 0.3);
+        }
+
+        .load-example {
+            background: linear-gradient(135deg, #06d6a0 0%, #059669 100%);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+            width: 100%;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .load-example:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(6, 214, 160, 0.3);
+        }
+
+        .import-json {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            min-width: 120px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .import-json:hover {
+            background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .import-section {
+            margin-bottom: 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-radius: 12px;
+            border-left: 4px solid #17a2b8;
+        }
+
+        .import-section h4 {
+            color: #0277bd;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+
+        .import-controls {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+
+        .json-input {
+            flex: 1;
+            min-height: 80px;
+            max-height: 150px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            resize: vertical;
+        }
+
+        .button-group {
+            margin-bottom: 20px;
+        }
+
+        .button-group button {
+            width: 100%;
+        }
+
+        .nested-group {
+            background: rgba(255, 255, 255, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .nested-group h4 {
+            color: #6c757d;
+            margin-bottom: 10px;
+            font-size: 0.95em;
+            font-weight: 600;
+        }
+
+        .color-input {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .color-input input[type="color"] {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 1200px) {
+            .editor-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* JSON syntax highlighting */
+        .json-key { color: #66d9ef; }
+        .json-string { color: #a6e22e; }
+        .json-number { color: #ae81ff; }
+        .json-boolean { color: #f92672; }
+        .json-null { color: #f92672; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Veo3 JSON Prompt Editor</h1>
+        <p class="subtitle">Made by <a href="https://www.instagram.com/itsshubhamsinha/" target="_blank">Shubham Sinha</a></p>
+        
+        <div class="editor-layout">
+            <div class="form-panel">
+                <div class="button-group">
+                    <button class="load-example" onclick="loadExample()">Load Example</button>
+                </div>
+                
+                <div class="import-section">
+                    <h4>Import Existing JSON</h4>
+                    <div class="import-controls">
+                        <textarea id="jsonInput" class="json-input" placeholder="Paste your Veo3 JSON here..."></textarea>
+                        <button class="import-json" onclick="importFromTextbox()">Import</button>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h3>Style</h3>
+                    <div class="form-group">
+                        <label for="style">Visual Style</label>
+                        <select id="style">
+                            <option value="">Select style...</option>
+                            <option value="realistic">Realistic</option>
+                            <option value="animation">Animation</option>
+                            <option value="anime">Anime</option>
+                            <option value="claymation">Claymation</option>
+                            <option value="lego">Lego</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>Shot</h3>
+                    <div class="form-group">
+                        <label for="composition">Composition</label>
+                        <input type="text" id="composition" placeholder="Medium close-up, 50mm lens...">
+                    </div>
+                    <div class="form-group">
+                        <label for="camera_motion">Camera Motion</label>
+                        <input type="text" id="camera_motion" placeholder="slow handheld sway...">
+                    </div>
+                    <div class="form-group">
+                        <label for="frame_rate">Frame Rate</label>
+                        <input type="text" id="frame_rate" placeholder="30fps">
+                    </div>
+                    <div class="form-group">
+                        <label for="film_grain">Film Grain</label>
+                        <input type="text" id="film_grain" placeholder="soft grain with dreamlike pastels">
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>Subject</h3>
+                    <div class="form-group">
+                        <label for="subject_description">Description</label>
+                        <textarea id="subject_description" placeholder="Delicate woman with pale lavender bob..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="wardrobe">Wardrobe</label>
+                        <input type="text" id="wardrobe" placeholder="sheer iridescent blouse...">
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>Scene</h3>
+                    <div class="form-group">
+                        <label for="location">Location</label>
+                        <input type="text" id="location" placeholder="abandoned theater dressing room...">
+                    </div>
+                    <div class="form-group">
+                        <label for="time_of_day">Time of Day</label>
+                        <select id="time_of_day">
+                            <option value="">Select time of day...</option>
+                            <option value="dawn">Dawn</option>
+                            <option value="morning">Morning</option>
+                            <option value="afternoon">Afternoon</option>
+                            <option value="sunset">Sunset</option>
+                            <option value="twilight">Twilight</option>
+                            <option value="night">Night</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="environment">Environment</label>
+                        <textarea id="environment" placeholder="dusty mirror, hanging gowns..."></textarea>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>Visual Details</h3>
+                    <div class="form-group">
+                        <label for="action">Action</label>
+                        <textarea id="action" placeholder="she leans close to camera, whispering verses..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="props">Props</label>
+                        <input type="text" id="props" placeholder="old vanity mirror, perfume bottle...">
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>Cinematography</h3>
+                    <div class="form-group">
+                        <label for="lighting">Lighting</label>
+                        <textarea id="lighting" placeholder="low key pastel lighting with edge rim lights..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="tone">Tone</label>
+                        <input type="text" id="tone" placeholder="dreamlike, intimate, melancholic">
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>Audio</h3>
+                    <div class="nested-group">
+                        <h4>Dialogue</h4>
+                        <div class="form-group">
+                            <label for="character">Character</label>
+                            <input type="text" id="character" placeholder="The Dream Confessor">
+                        </div>
+                        <div class="form-group">
+                            <label for="line">Line</label>
+                            <textarea id="line" placeholder="I left my name inside the silence..."></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="nested-group">
+                        <h4>Background Music</h4>
+                        <div class="form-group">
+                            <label for="background_music">Background Music</label>
+                            <textarea id="background_music" placeholder="soft piano melody, ambient synth pads..."></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="nested-group">
+                        <h4>Vocal Style</h4>
+                        <div class="form-group">
+                            <label for="voice_tone">Voice Tone</label>
+                            <input type="text" id="voice_tone" placeholder="ethereal, emotional, intimate female voice">
+                        </div>
+                        <div class="form-group">
+                            <label for="delivery">Delivery</label>
+                            <input type="text" id="delivery" placeholder="whispered falsetto lines with airy delay">
+                        </div>
+                        <div class="form-group">
+                            <label for="flow">Flow</label>
+                            <input type="text" id="flow" placeholder="spoken-word rhythm with lo-fi melodic breaks">
+                        </div>
+                        <div class="form-group">
+                            <label for="phrasing">Phrasing</label>
+                            <input type="text" id="phrasing" placeholder="one-line drops with space between...">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>Color Palette</h3>
+                    <div class="form-group">
+                        <label for="color_palette">Color Palette</label>
+                        <input type="text" id="color_palette" placeholder="Lavender, rose gold, and pale blue...">
+                    </div>
+                </div>
+            </div>
+
+            <div class="json-panel">
+                <div class="json-header">
+                    <div class="json-title">Generated JSON</div>
+                    <button class="copy-btn" onclick="copyToClipboard()">Copy JSON</button>
+                </div>
+                <div class="json-output" id="jsonOutput"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const exampleData = {
+            "style": "realistic",
+            "shot": {
+                "composition": "Medium close-up, 50mm lens on Sony Venice 2, soft handheld motion, extreme shallow DOF, 30fps, pastel overlay texture",
+                "camera_motion": "slow handheld sway with micro push-in on emotional peaks",
+                "frame_rate": "30fps",
+                "film_grain": "soft grain with dreamlike pastels"
+            },
+            "subject": {
+                "description": "Delicate woman with pale lavender bob, glassy eyes, glitter tears down her cheeks",
+                "wardrobe": "sheer iridescent blouse, layered pearl necklaces, soft makeup with shimmer"
+            },
+            "scene": {
+                "location": "abandoned theater dressing room with dim antique vanity lights",
+                "time_of_day": "twilight",
+                "environment": "dusty mirror, hanging gowns, soft pink light haze"
+            },
+            "visual_details": {
+                "action": "she leans close to camera, whispering verses like secrets, fingers trailing across mirror frame, breath fogging glass",
+                "props": "old vanity mirror, perfume bottle, dim string lights"
+            },
+            "cinematography": {
+                "lighting": "low key pastel lighting with edge rim lights, heavy diffusion for softness",
+                "tone": "dreamlike, intimate, melancholic"
+            },
+            "audio": {
+                "dialogue": {
+                    "character": "The Dream Confessor",
+                    "line": "I left my name inside the silence, stitched it in shadows, drowned it in diamonds."
+                },
+                "background_music": "soft ambient reverb, faint vinyl crackle, low synth hum",
+                "vocal_style": {
+                    "voice_tone": "ethereal, emotional, intimate female voice",
+                    "delivery": "whispered falsetto lines with airy delay",
+                    "flow": "spoken-word rhythm with lo-fi melodic breaks",
+                    "phrasing": "one-line drops with space between; fragile and breathy"
+                }
+            },
+            "color_palette": "Lavender, rose gold, and pale blue with glowing skin tones and dreamy blur"
+        };
+
+        function importFromTextbox() {
+            try {
+                const jsonText = document.getElementById('jsonInput').value.trim();
+                if (!jsonText) {
+                    throw new Error('No JSON provided');
+                }
+                
+                const jsonData = JSON.parse(jsonText);
+                
+                // Clear all fields first
+                clearAllFields();
+                
+                // Load style data
+                if (jsonData.style) document.getElementById('style').value = jsonData.style;
+                
+                // Load shot data
+                if (jsonData.shot) {
+                    if (jsonData.shot.composition) document.getElementById('composition').value = jsonData.shot.composition;
+                    if (jsonData.shot.camera_motion) document.getElementById('camera_motion').value = jsonData.shot.camera_motion;
+                    if (jsonData.shot.frame_rate) document.getElementById('frame_rate').value = jsonData.shot.frame_rate;
+                    if (jsonData.shot.film_grain) document.getElementById('film_grain').value = jsonData.shot.film_grain;
+                }
+                
+                // Load subject data
+                if (jsonData.subject) {
+                    if (jsonData.subject.description) document.getElementById('subject_description').value = jsonData.subject.description;
+                    if (jsonData.subject.wardrobe) document.getElementById('wardrobe').value = jsonData.subject.wardrobe;
+                }
+                
+                // Load scene data
+                if (jsonData.scene) {
+                    if (jsonData.scene.location) document.getElementById('location').value = jsonData.scene.location;
+                    if (jsonData.scene.time_of_day) document.getElementById('time_of_day').value = jsonData.scene.time_of_day;
+                    if (jsonData.scene.environment) document.getElementById('environment').value = jsonData.scene.environment;
+                }
+                
+                // Load visual details
+                if (jsonData.visual_details) {
+                    if (jsonData.visual_details.action) document.getElementById('action').value = jsonData.visual_details.action;
+                    if (jsonData.visual_details.props) document.getElementById('props').value = jsonData.visual_details.props;
+                }
+                
+                // Load cinematography
+                if (jsonData.cinematography) {
+                    if (jsonData.cinematography.lighting) document.getElementById('lighting').value = jsonData.cinematography.lighting;
+                    if (jsonData.cinematography.tone) document.getElementById('tone').value = jsonData.cinematography.tone;
+                }
+                
+                // Load audio data
+                if (jsonData.audio) {
+                    // Load dialogue
+                    if (jsonData.audio.dialogue) {
+                        if (jsonData.audio.dialogue.character) document.getElementById('character').value = jsonData.audio.dialogue.character;
+                        if (jsonData.audio.dialogue.line) document.getElementById('line').value = jsonData.audio.dialogue.line;
+                    }
+                    
+                    // Load background music
+                    if (jsonData.audio.background_music) document.getElementById('background_music').value = jsonData.audio.background_music;
+                    
+                    // Load vocal style
+                    if (jsonData.audio.vocal_style) {
+                        if (jsonData.audio.vocal_style.voice_tone) document.getElementById('voice_tone').value = jsonData.audio.vocal_style.voice_tone;
+                        if (jsonData.audio.vocal_style.delivery) document.getElementById('delivery').value = jsonData.audio.vocal_style.delivery;
+                        if (jsonData.audio.vocal_style.flow) document.getElementById('flow').value = jsonData.audio.vocal_style.flow;
+                        if (jsonData.audio.vocal_style.phrasing) document.getElementById('phrasing').value = jsonData.audio.vocal_style.phrasing;
+                    }
+                    
+                    // Legacy support for voice_tone at audio level
+                    if (jsonData.audio.voice_tone && !jsonData.audio.vocal_style?.voice_tone) {
+                        document.getElementById('voice_tone').value = jsonData.audio.voice_tone;
+                    }
+                }
+                
+                // Load color palette
+                if (jsonData.color_palette) document.getElementById('color_palette').value = jsonData.color_palette;
+                
+                // Legacy support for dialogue at root level
+                if (jsonData.dialogue && !jsonData.audio?.dialogue) {
+                    if (jsonData.dialogue.character) document.getElementById('character').value = jsonData.dialogue.character;
+                    if (jsonData.dialogue.line) document.getElementById('line').value = jsonData.dialogue.line;
+                }
+                
+                updateJSON();
+                
+                // Clear the input textbox after successful import
+                document.getElementById('jsonInput').value = '';
+                
+                // Show success feedback
+                const btn = document.querySelector('.import-json');
+                const originalText = btn.textContent;
+                btn.textContent = 'Imported!';
+                btn.style.background = '#28a745';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = '#17a2b8';
+                }, 2000);
+                
+            } catch (error) {
+                // Show error feedback
+                const btn = document.querySelector('.import-json');
+                const originalText = btn.textContent;
+                btn.textContent = 'Invalid JSON!';
+                btn.style.background = '#dc3545';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = '#17a2b8';
+                }, 2000);
+                console.error('Error importing JSON:', error);
+            }
+        }
+
+        function importFromTextbox() {
+            try {
+                const jsonText = document.getElementById('jsonInput').value.trim();
+                if (!jsonText) {
+                    throw new Error('No JSON provided');
+                }
+                
+                const jsonData = JSON.parse(jsonText);
+                
+                // Clear all fields first
+                clearAllFields();
+                
+                // Load shot data
+                if (jsonData.shot) {
+                    if (jsonData.shot.composition) document.getElementById('composition').value = jsonData.shot.composition;
+                    if (jsonData.shot.camera_motion) document.getElementById('camera_motion').value = jsonData.shot.camera_motion;
+                    if (jsonData.shot.frame_rate) document.getElementById('frame_rate').value = jsonData.shot.frame_rate;
+                    if (jsonData.shot.film_grain) document.getElementById('film_grain').value = jsonData.shot.film_grain;
+                }
+                
+                // Load subject data
+                if (jsonData.subject) {
+                    if (jsonData.subject.description) document.getElementById('subject_description').value = jsonData.subject.description;
+                    if (jsonData.subject.wardrobe) document.getElementById('wardrobe').value = jsonData.subject.wardrobe;
+                }
+                
+                // Load scene data
+                if (jsonData.scene) {
+                    if (jsonData.scene.location) document.getElementById('location').value = jsonData.scene.location;
+                    if (jsonData.scene.time_of_day) document.getElementById('time_of_day').value = jsonData.scene.time_of_day;
+                    if (jsonData.scene.environment) document.getElementById('environment').value = jsonData.scene.environment;
+                }
+                
+                // Load visual details
+                if (jsonData.visual_details) {
+                    if (jsonData.visual_details.action) document.getElementById('action').value = jsonData.visual_details.action;
+                    if (jsonData.visual_details.props) document.getElementById('props').value = jsonData.visual_details.props;
+                }
+                
+                // Load cinematography
+                if (jsonData.cinematography) {
+                    if (jsonData.cinematography.lighting) document.getElementById('lighting').value = jsonData.cinematography.lighting;
+                    if (jsonData.cinematography.tone) document.getElementById('tone').value = jsonData.cinematography.tone;
+                }
+                
+                // Load audio data
+                if (jsonData.audio) {
+                    // Load dialogue
+                    if (jsonData.audio.dialogue) {
+                        if (jsonData.audio.dialogue.character) document.getElementById('character').value = jsonData.audio.dialogue.character;
+                        if (jsonData.audio.dialogue.line) document.getElementById('line').value = jsonData.audio.dialogue.line;
+                        if (jsonData.audio.dialogue.subtitles !== undefined) document.getElementById('subtitles').checked = jsonData.audio.dialogue.subtitles;
+                    }
+                    
+                    // Load background music
+                    if (jsonData.audio.background_music) document.getElementById('background_music').value = jsonData.audio.background_music;
+                    
+                    // Load vocal style
+                    if (jsonData.audio.vocal_style) {
+                        if (jsonData.audio.vocal_style.voice_tone) document.getElementById('voice_tone').value = jsonData.audio.vocal_style.voice_tone;
+                        if (jsonData.audio.vocal_style.delivery) document.getElementById('delivery').value = jsonData.audio.vocal_style.delivery;
+                        if (jsonData.audio.vocal_style.flow) document.getElementById('flow').value = jsonData.audio.vocal_style.flow;
+                        if (jsonData.audio.vocal_style.phrasing) document.getElementById('phrasing').value = jsonData.audio.vocal_style.phrasing;
+                    }
+                    
+                    // Legacy support for voice_tone at audio level
+                    if (jsonData.audio.voice_tone && !jsonData.audio.vocal_style?.voice_tone) {
+                        document.getElementById('voice_tone').value = jsonData.audio.voice_tone;
+                    }
+                }
+                
+                // Load color palette
+                if (jsonData.color_palette) document.getElementById('color_palette').value = jsonData.color_palette;
+                
+                // Legacy support for dialogue at root level
+                if (jsonData.dialogue && !jsonData.audio?.dialogue) {
+                    if (jsonData.dialogue.character) document.getElementById('character').value = jsonData.dialogue.character;
+                    if (jsonData.dialogue.line) document.getElementById('line').value = jsonData.dialogue.line;
+                    if (jsonData.dialogue.subtitles !== undefined) document.getElementById('subtitles').checked = jsonData.dialogue.subtitles;
+                }
+                
+                updateJSON();
+                
+                // Clear the input textbox after successful import
+                document.getElementById('jsonInput').value = '';
+                
+                // Show success feedback
+                const btn = document.querySelector('.import-json');
+                const originalText = btn.textContent;
+                btn.textContent = 'Imported!';
+                btn.style.background = '#28a745';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = '#17a2b8';
+                }, 2000);
+                
+            } catch (error) {
+                // Show error feedback
+                const btn = document.querySelector('.import-json');
+                const originalText = btn.textContent;
+                btn.textContent = 'Invalid JSON!';
+                btn.style.background = '#dc3545';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = '#17a2b8';
+                }, 2000);
+                console.error('Error importing JSON:', error);
+            }
+        }
+
+        function clearAllFields() {
+            const inputs = document.querySelectorAll('input[type="text"], input[type="number"], textarea');
+            inputs.forEach(input => input.value = '');
+            
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(checkbox => checkbox.checked = false);
+            
+            const selects = document.querySelectorAll('select');
+            selects.forEach(select => select.selectedIndex = 0);
+        }
+
+        function loadExample() {
+            // Load example data into form fields
+            document.getElementById('style').value = exampleData.style;
+            document.getElementById('composition').value = exampleData.shot.composition;
+            document.getElementById('camera_motion').value = exampleData.shot.camera_motion;
+            document.getElementById('frame_rate').value = exampleData.shot.frame_rate;
+            document.getElementById('film_grain').value = exampleData.shot.film_grain;
+            
+            document.getElementById('subject_description').value = exampleData.subject.description;
+            document.getElementById('wardrobe').value = exampleData.subject.wardrobe;
+            
+            document.getElementById('location').value = exampleData.scene.location;
+            document.getElementById('time_of_day').value = exampleData.scene.time_of_day;
+            document.getElementById('environment').value = exampleData.scene.environment;
+            
+            document.getElementById('action').value = exampleData.visual_details.action;
+            document.getElementById('props').value = exampleData.visual_details.props;
+            
+            document.getElementById('lighting').value = exampleData.cinematography.lighting;
+            document.getElementById('tone').value = exampleData.cinematography.tone;
+            
+            document.getElementById('character').value = exampleData.audio.dialogue.character;
+            document.getElementById('line').value = exampleData.audio.dialogue.line;
+            document.getElementById('background_music').value = exampleData.audio.background_music;
+            document.getElementById('voice_tone').value = exampleData.audio.voice_tone;
+            
+            document.getElementById('delivery').value = exampleData.audio.vocal_style.delivery;
+            document.getElementById('flow').value = exampleData.audio.vocal_style.flow;
+            document.getElementById('phrasing').value = exampleData.audio.vocal_style.phrasing;
+            
+            document.getElementById('color_palette').value = exampleData.color_palette;
+            
+            updateJSON();
+        }
+
+        function updateJSON() {
+            const jsonData = {
+                "style": document.getElementById('style').value,
+                "shot": {
+                    "composition": document.getElementById('composition').value,
+                    "camera_motion": document.getElementById('camera_motion').value,
+                    "frame_rate": document.getElementById('frame_rate').value,
+                    "film_grain": document.getElementById('film_grain').value
+                },
+                "subject": {
+                    "description": document.getElementById('subject_description').value,
+                    "wardrobe": document.getElementById('wardrobe').value
+                },
+                "scene": {
+                    "location": document.getElementById('location').value,
+                    "time_of_day": document.getElementById('time_of_day').value,
+                    "environment": document.getElementById('environment').value
+                },
+                "visual_details": {
+                    "action": document.getElementById('action').value,
+                    "props": document.getElementById('props').value
+                },
+                "cinematography": {
+                    "lighting": document.getElementById('lighting').value,
+                    "tone": document.getElementById('tone').value
+                },
+                "audio": {
+                    "dialogue": {
+                        "character": document.getElementById('character').value,
+                        "line": document.getElementById('line').value
+                    },
+                    "background_music": document.getElementById('background_music').value,
+                    "vocal_style": {
+                        "voice_tone": document.getElementById('voice_tone').value,
+                        "delivery": document.getElementById('delivery').value,
+                        "flow": document.getElementById('flow').value,
+                        "phrasing": document.getElementById('phrasing').value
+                    }
+                },
+                "color_palette": document.getElementById('color_palette').value
+            };
+
+            // Remove empty values
+            function removeEmpty(obj) {
+                Object.keys(obj).forEach(key => {
+                    if (obj[key] && typeof obj[key] === 'object' && !Array.isArray(obj[key])) {
+                        removeEmpty(obj[key]);
+                        if (Object.keys(obj[key]).length === 0) {
+                            delete obj[key];
+                        }
+                    } else if (obj[key] === '' || obj[key] === null || obj[key] === undefined) {
+                        delete obj[key];
+                    }
+                });
+            }
+
+            const cleanedData = JSON.parse(JSON.stringify(jsonData));
+            removeEmpty(cleanedData);
+
+            const jsonString = JSON.stringify(cleanedData, null, 2);
+            const highlighted = syntaxHighlight(jsonString);
+            document.getElementById('jsonOutput').innerHTML = highlighted;
+        }
+
+        function syntaxHighlight(json) {
+            json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+                let cls = 'json-number';
+                if (/^"/.test(match)) {
+                    if (/:$/.test(match)) {
+                        cls = 'json-key';
+                    } else {
+                        cls = 'json-string';
+                    }
+                } else if (/true|false/.test(match)) {
+                    cls = 'json-boolean';
+                } else if (/null/.test(match)) {
+                    cls = 'json-null';
+                }
+                return '<span class="' + cls + '">' + match + '</span>';
+            });
+        }
+
+        function copyToClipboard() {
+            const jsonOutput = document.getElementById('jsonOutput').textContent;
+            navigator.clipboard.writeText(jsonOutput).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                const originalText = btn.textContent;
+                btn.textContent = 'Copied!';
+                btn.style.background = '#28a745';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = '#667eea';
+                }, 2000);
+            });
+        }
+
+        // Add event listeners to all form elements
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputs = document.querySelectorAll('input, textarea, select');
+            inputs.forEach(input => {
+                input.addEventListener('input', updateJSON);
+                input.addEventListener('change', updateJSON);
+            });
+            
+            // Initialize with empty JSON
+            updateJSON();
+        });
+    </script>
+</body>
+</html>
